@@ -48,7 +48,7 @@ def create_stream():
         "stream_id": stream_id,
         "delivery": data.get("delivery"),
         "format": data.get("format", "iss_sub"),
-        "iss": "http://localhost:5000",
+        "iss": "https://ssf-6g58.onrender.com",
         "aud": data.get("delivery", {}).get("endpoint_url"),
         "events_supported": [
             "https://schemas.openid.net/secevent/caep/event-type/session-revoked",
@@ -97,19 +97,19 @@ def delete_stream(stream_id):
         return '', 204
     return jsonify({"error": "not found"}), 404
 
-# Well-known SSF Configuration (Okta-style)
+# Well-known SSF Configuration (Okta-style, Render URL)
 @app.route('/.well-known/ssf-configuration', methods=['GET'])
 def ssf_config():
     return jsonify({
-        "configuration_endpoint": "http://localhost:5000/api/v1/ssf/stream",
+        "configuration_endpoint": "https://ssf-6g58.onrender.com/api/v1/ssf/stream",
         "delivery_methods_supported": [
             "https://schemas.openid.net/secevent/risc/delivery-method/push",
             "urn:ietf:rfc:8935"
         ],
-        "issuer": "http://localhost:5000",
-        "jwks_uri": "http://localhost:5000/oauth2/v1/keys",
-        "verification_endpoint": "http://localhost:5000/api/v1/ssf/stream/verification",
+        "issuer": "https://ssf-6g58.onrender.com",
+        "jwks_uri": "https://ssf-6g58.onrender.com/oauth2/v1/keys",
         "spec_version": "1_0-ID3",
+        "verification_endpoint": "https://ssf-6g58.onrender.com/api/v1/ssf/stream/verification",
         "authorization_schemes": [
             {
                 "spec_urn": "urn:ietf:rfc:6749"
