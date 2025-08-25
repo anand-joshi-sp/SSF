@@ -118,5 +118,22 @@ def ssf_config():
         "default_subjects": "ALL"
     })
 
+# JWKS endpoint simulation (Okta-style)
+@app.route('/oauth2/v1/keys', methods=['GET'])
+def jwks():
+    # Dummy RSA public key (replace with real if needed)
+    return jsonify({
+        "keys": [
+            {
+                "kty": "RSA",
+                "use": "sig",
+                "kid": "test-key-id",
+                "alg": "RS256",
+                "n": "sXchZXFSpXgmJAjlJm5bRrqlh1X1XoMEBG6M7m9G2Oft4T3HBylWllO9sUpKxYbiNbi3sZT_xCgR9Stt9XbI4bQnTk1IiwSK9DMySVH8Pu4O_0TInJlXGvjh8UeVYhG4J-cq0pXZ5o2b3zMxeIr9U9-vr7v6kH6vRloObVvn8WQ",
+                "e": "AQAB"
+            }
+        ]
+    })
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
