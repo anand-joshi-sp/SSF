@@ -5,11 +5,11 @@ import uuid
 app = Flask(__name__)
 CORS(app)
 
-# In-memory store
+# In-memory storage
 streams = {}
 access_tokens = {}
 
-# Token endpoint
+# OAuth Token Endpoint with scope validation
 @app.route('/oauth/token', methods=['POST'])
 def token():
     client_id = request.form.get("client_id")
@@ -17,35 +17,37 @@ def token():
     grant_type = request.form.get("grant_type")
     scope = request.form.get("scope")
 
-    if client_id == "test-client-id" and client_secret == "test-client-secret" and grant_type == "client_credentials" and scope == "ssf.manage":
+    if (client_id == "test-client-id" and
+        client_secret == "test-client-secret" and
+        grant_type == "client_credentials" and
+        scope == "ssf.manage"):
+
         token = str(uuid.uuid4())
-        access_tokens[token] = {"scope": scope}
+        access_tokens[token] = True
         return jsonify({
             "access_token": token,
             "token_type": "Bearer",
-            "expires_in": 3600,
-            "scope": scope
+            "expires_in": 3600
         })
-    return jsonify({"error": "invalid_client_or_scope"}), 401
 
-# Auth check
+    return jsonify({"error": "invalid_client"}), 401
+
+# Authentication Check
 def check_auth():
-    auth = request.headers.get("Authorization", "")
-    if not auth.startswith("Bearer "):
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
         return False
-    token = auth.split(" ")[1]
-    token_data = access_tokens.get(token)
-    return token_data is not None and token_data.get("scope") == "ssf.manage"
+    token = auth_header.split(" ")[1]
+    return token in access_tokens
 
-# Create stream
+# Create Stream
 @app.route('/api/v1/ssf/stream', methods=['POST'])
 def create_stream():
     if not check_auth():
         return jsonify({"error": "unauthorized"}), 401
-
     data = request.json
     stream_id = str(uuid.uuid4())
-    stream_data = {
+    streams[stream_id] = {
         "stream_id": stream_id,
         "delivery": data.get("delivery"),
         "format": data.get("format", "iss_sub"),
@@ -59,25 +61,16 @@ def create_stream():
         "events_delivered": [],
         "min_verification_interval": 900
     }
-    streams[stream_id] = stream_data
-    return jsonify(stream_data), 201
+    return jsonify(streams[stream_id]), 201
 
-# Get all streams or specific one via query param
+# Get Streams
 @app.route('/api/v1/ssf/stream', methods=['GET'])
 def list_streams():
     if not check_auth():
         return jsonify({"error": "unauthorized"}), 401
+    return jsonify(list(streams.values())), 200
 
-    stream_id = request.args.get("stream_id")
-    if stream_id:
-        stream = streams.get(stream_id)
-        if not stream:
-            return jsonify({"error": "not found"}), 404
-        return jsonify(stream), 200
-    else:
-        return jsonify(list(streams.values())), 200
-
-# Delete stream
+# Delete Stream
 @app.route('/api/v1/ssf/stream/<stream_id>', methods=['DELETE'])
 def delete_stream(stream_id):
     if not check_auth():
@@ -87,16 +80,14 @@ def delete_stream(stream_id):
         return '', 204
     return jsonify({"error": "not found"}), 404
 
-# Well-known SSF config
+# Well-known Config
 @app.route('/.well-known/ssf-configuration', methods=['GET'])
 def ssf_config():
     return jsonify({
         "issuer": "https://mock-idp.com",
-        "jwks_uri": "https://mock-idp.com/oauth2/v1/keys",
-        "token_endpoint": "http://localhost:5000/oauth/token",
-        "scopes_supported": ["ssf.manage"],
-        "response_types_supported": ["token"]
+        "token_endpoint": "https://<your-app>.onrender.com/oauth/token",
+        "scopes_supported": ["ssf.manage"]
     })
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000)
