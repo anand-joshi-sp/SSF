@@ -14,7 +14,7 @@ def ssf():
             print("✅ Verification challenge received:", challenge)
             return Response(
                 response=challenge,
-                status=200,
+                status=202,
                 headers={"Content-Type": "text/plain; charset=utf-8"}
             )
 
@@ -22,7 +22,7 @@ def ssf():
         print("📩 Received SSF event:", data)
         return Response(
             response="OK",
-            status=200,
+            status=202,
             headers={"Content-Type": "text/plain; charset=utf-8"}
         )
 
@@ -38,3 +38,4 @@ def ssf():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))  # Render sets PORT
     app.run(host="0.0.0.0", port=port)
+
