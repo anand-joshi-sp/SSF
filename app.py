@@ -7,21 +7,34 @@ app = Flask(__name__)
 def ssf():
     try:
         data = request.get_json(force=True, silent=True)
+
+        # Handle verification event
         if data and data.get("event") == "stream.verification":
             challenge = data.get("challenge")
-            print("✅ Received verification challenge:", challenge)
-            # Respond exactly with the challenge, plain text
-            return Response(challenge, status=200, mimetype="text/plain")
+            print("✅ Verification challenge received:", challenge)
+            return Response(
+                response=challenge,
+                status=200,
+                headers={"Content-Type": "text/plain; charset=utf-8"}
+            )
 
-        # For all other SSF events
+        # Handle all other SSF events
         print("📩 Received SSF event:", data)
-        return Response("OK", status=200, mimetype="text/plain")
+        return Response(
+            response="OK",
+            status=200,
+            headers={"Content-Type": "text/plain; charset=utf-8"}
+        )
 
     except Exception as e:
         print("❌ Error handling request:", str(e))
-        return Response("Internal Server Error", status=500, mimetype="text/plain")
+        return Response(
+            response="Internal Server Error",
+            status=500,
+            headers={"Content-Type": "text/plain; charset=utf-8"}
+        )
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Render provides $PORT
+    port = int(os.environ.get("PORT", 5000))  # Render sets PORT
     app.run(host="0.0.0.0", port=port)
