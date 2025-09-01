@@ -1,3 +1,4 @@
+import os
 from flask import Flask, request, Response
 
 app = Flask(__name__)
@@ -10,3 +11,7 @@ def ssf():
         print("Verification challenge received:", challenge)
         return Response(challenge, status=200, mimetype="text/plain")
     return "OK", 200
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))  # Render provides PORT env
+    app.run(host="0.0.0.0", port=port)
