@@ -1,12 +1,15 @@
+import sys
 import os
 import json
 from flask import Flask, request, Response
 import base64
 
+# Flush logs immediately
+sys.stdout.reconfigure(line_buffering=True)
+
 app = Flask(__name__)
 
 def decode_jwt(token):
-    """Decode JWT (header + payload, ignore signature)."""
     try:
         parts = token.split(".")
         if len(parts) < 2:
@@ -19,34 +22,31 @@ def decode_jwt(token):
 
 @app.route("/ssf", methods=["POST"])
 def ssf():
-    try:
-        # Log headers
-        print("📑 Headers:", dict(request.headers))
+    headers = dict(request.headers)
+    raw_body = request.get_data(as_text=True).strip()
 
-        # Log raw body
-        raw_body = request.data.decode("utf-8").strip()
-        print("📩 Raw body:", raw_body)
+    print("📑 Headers:", headers)
+    print("📩 Raw body (len={}): {}".format(len(raw_body), raw_body))
 
-        # If verification event (JSON with challenge)
-        if raw_body.startswith("{"):
+    # Verification flow
+    if raw_body.startswith("{"):
+        try:
             data = request.get_json(force=True, silent=True)
-            print("📜 Parsed JSON body:", json.dumps(data, indent=2))
+            print("📜 Parsed JSON:", json.dumps(data, indent=2))
             if data and data.get("event") == "stream.verification":
                 challenge = data.get("challenge")
-                print("✅ Verification challenge received:", challenge)
+                print("✅ Challenge:", challenge)
                 return Response(challenge, status=202, content_type="text/plain; charset=utf-8")
-            return Response("OK", status=202, content_type="text/plain; charset=utf-8")
+        except Exception as e:
+            print("❌ JSON parse error:", str(e))
 
-        # Otherwise assume JWT (SET token)
-        print("🔑 Encoded token (raw):", raw_body)
+    # Real SSF event (assume JWT)
+    if raw_body:
+        print("🔑 Encoded JWT:", raw_body)
         decoded = decode_jwt(raw_body)
-        print("📜 Decoded payload:", json.dumps(decoded, indent=2))
+        print("📜 Decoded JWT:", json.dumps(decoded, indent=2))
 
-        return Response("Accepted", status=202, content_type="text/plain; charset=utf-8")
-
-    except Exception as e:
-        print("❌ Error handling request:", str(e))
-        return Response("Internal Server Error", status=500, content_type="text/plain; charset=utf-8")
+    return Response("Accepted", status=202, content_type="text/plain; charset=utf-8")
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
